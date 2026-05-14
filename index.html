@@ -30,7 +30,7 @@
             position: relative;
         }
         h1 { font-size: 20px; letter-spacing: 4px; color: #777; margin-bottom: 15px; font-weight: 400; }
-        .timer { font-size: 80px; font-weight: 200; margin: 15px 0; letter-spacing: 6px; height: 90px; transition: color 0.3s ease; }
+        .timer { font-size: 80px; font-weight: 200; margin: 15px 0; letter-spacing: 6px; height: 90px; }
         .btn {
             background: transparent; color: #fff; border: 1px solid #444; padding: 12px 30px;
             font-size: 15px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
@@ -39,53 +39,38 @@
         .btn:hover { background: #fff; color: #000; }
         .btn.ready-active { background: #fff; color: #000; border-color: #fff; }
         .status-container { display: flex; justify-content: space-between; margin-top: 15px; font-size: 14px; color: #555; padding: 0 10px; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; background-color: #333; transition: all 0.3s ease; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; background-color: #333; }
         .ready-dot { background-color: #00ff44; box-shadow: 0 0 10px #00ff44; }
-
-        /* ستايل الجات */
-        .chat-box {
-            margin-top: 30px; border-top: 1px solid #222; padding-top: 20px; text-align: left;
-        }
-        #messages {
-            height: 100px; overflow-y: auto; font-size: 13px; color: #aaa; margin-bottom: 10px;
-            display: flex; flex-direction: column; gap: 5px; scroll-behavior: smooth;
-        }
-        .msg { padding: 4px 8px; border-radius: 6px; background: #1a1a1a; width: fit-content; word-wrap: break-word; }
+        .chat-box { margin-top: 30px; border-top: 1px solid #222; padding-top: 20px; text-align: left; }
+        #messages { height: 100px; overflow-y: auto; font-size: 13px; color: #aaa; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .msg { padding: 4px 8px; border-radius: 6px; background: #1a1a1a; width: fit-content; }
         .msg-me { align-self: flex-end; background: #333; color: #fff; }
-        .chat-input {
-            width: 100%; background: #000; border: 1px solid #333; color: #fff;
-            padding: 8px; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box;
-        }
+        .chat-input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>H7 & TIBA</h1>
-        
         <div id="roleSelection">
             <button class="btn" id="btnH7">I am H7</button>
             <button class="btn" id="btnTiba">I am Tiba</button>
         </div>
-
         <div id="mainStage" style="display: none;">
             <div class="timer" id="display">25:00</div>
             <button class="btn" id="readyBtn">Ready</button>
             <button class="btn" id="resetBtn" style="display: none; border-color: #600;">Reset</button>
-            
             <div class="status-container">
                 <div><span class="status-dot" id="dotH7"></span>H7</div>
                 <div><span class="status-dot" id="dotTiba"></span>Tiba</div>
             </div>
-
             <div class="chat-box">
                 <div id="messages"></div>
-                <input type="text" id="chatInput" class="chat-input" placeholder="Type a message & press Enter...">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Type & Enter...">
             </div>
         </div>
     </div>
 
     <script>
-        // الكونفك مالتك ضفتله رابط الداتا بيس الناقص
         const firebaseConfig = {
             apiKey: "AIzaSyA1SCF0gfH-On_CyG8QHMujuyBYlAN6Ex4",
             authDomain: "h7-tiba-focus.firebaseapp.com",
@@ -99,7 +84,6 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         let myRole = ""; 
         let duration = 25 * 60 * 1000; 
         let localTimerInterval;
@@ -127,7 +111,7 @@
             document.getElementById('dotTiba').className = data.tibaReady ? "status-dot ready-dot" : "status-dot";
 
             if (myRole && data[`${myRole}Ready`]) {
-                readyBtn.textContent = "Waiting for partner...";
+                readyBtn.textContent = "Waiting...";
                 readyBtn.classList.add("ready-active");
             } else {
                 readyBtn.textContent = "Ready";
@@ -153,35 +137,28 @@
 
         readyBtn.onclick = () => {
             if (!myRole) return;
-            document.getElementById(`dot${myRole === 'h7' ? 'H7' : 'Tiba'}`).className = "status-dot ready-dot";
-            readyBtn.textContent = "Waiting...";
             db.ref('session').update({ [`${myRole}Ready`]: true });
         };
 
         resetBtn.onclick = () => {
             db.ref('session').set({ h7Ready: false, tibaReady: false, startTime: 0 });
-            db.ref('messages').remove(); // يمسح الجات من يترست التحدي
+            db.ref('messages').remove();
         };
 
         chatInput.onkeydown = (e) => {
             if (e.key === 'Enter' && chatInput.value.trim() !== "") {
-                const msg = chatInput.value;
-                db.ref('messages').push({
-                    user: myRole,
-                    text: msg,
-                    time: Date.now()
-                });
+                db.ref('messages').push({ user: myRole, text: chatInput.value, time: Date.now() });
                 chatInput.value = "";
             }
         };
 
-        db.ref('messages').limitToLast(15).on('value', (snapshot) => {
+        db.ref('messages').limitToLast(10).on('value', (snapshot) => {
             messagesDiv.innerHTML = "";
             snapshot.forEach((child) => {
                 const data = child.val();
                 const div = document.createElement('div');
                 div.className = `msg ${data.user === myRole ? 'msg-me' : ''}`;
-                div.textContent = `${data.text}`;
+                div.textContent = data.text;
                 messagesDiv.appendChild(div);
             });
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
